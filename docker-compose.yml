@@ -1,0 +1,27 @@
+services:
+  backend-java:
+    # Usa o Dockerfile que criamos no passo anterior
+    build: ./
+    container_name: backend-java
+    ports:
+      - "8070:8080"
+    environment:
+      # O host da URL deve ser o NOME do container existente ("database")
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://database:5432/petshop
+
+      # Insira aqui as credenciais que você definiu quando criou o container 'database'
+      QUARKUS_DATASOURCE_USERNAME: postgres
+      QUARKUS_DATASOURCE_PASSWORD: renato
+
+      # Evita que o Quarkus tente gerenciar schemas se o banco já for produtivo
+      # Mude para 'validate' ou 'none' se não quiser que ele altere tabelas
+      QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
+
+    networks:
+      - database  # Conecta este serviço à rede especificada abaixo
+
+# Configuração da Rede
+networks:
+  database:
+    external: true # Diz ao Docker: "Não crie essa rede, ela já existe no host"
+    name: database # O nome exato da rede que você criou anteriormente

@@ -5,21 +5,14 @@ package com.renato.dominio.entidade;
    código, adicionando uma nova funcionalidade a esse determinado trecho do meu código,
    otimizando a programação. Estou aproveitando algorítimos já existentes para aumentar
    minha eficiência. */
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Past;
-import jakarta.validation.constraints.Size;
-
-import java.time.LocalDate;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 import java.util.UUID; // O que é UUID? **Pesquisar**
 
 // A entidade será a classe que eu criei agora
 @Entity
-public class Pessoa {
+@Table(name = "dogs")
+public class Dogs {
     // Definindo os atributos da minha classe
     /* Meu primeiro atributo receberá um decorator chamado Id, que, em 'background'
     'rodará' uma série de algorítimo que definião esse primeiro atributo como um Id,
@@ -29,17 +22,21 @@ public class Pessoa {
     @GeneratedValue(strategy = GenerationType.UUID) // Gerando um valor aleatório para o Id
     private UUID id;
 
+    // Decorator que valida se o atributo está vazio.
+    @NotBlank
+    @Column(name = "breed")
+    private String breed;
+
     // Decorator que define qual o mínimo e máximo de caracteres a ser armazenados no atributo nome
     @Size(min = 3, max = 100)
     @NotBlank // O valor não pode ser nulo
-    private String nome;
+    @Column(name = "surname")
+    private String surname;
 
-    @Email // Decorator que valida se o E-mail informado é valido.
-    @NotBlank
-    private String email;
-
-    @Past // Só permite a entrada de datas do passado.
-    private LocalDate nascimento;
+    @Pattern(regexp = "^[MF]$", message = "Os valores aceitos são apenas 'M' para macho e 'F' para fêmea.") // Só permite a entrada de de dois valores (M e F).
+    @Size(min = 1, max = 1)
+    @Column(name = "gender")
+    private String gender;
 
     /* Como todas as variáveis receberam o modificador "private", os atributos só
     * podem ser alterados diretamente dentro da classe a qual pertencem. Para que
@@ -50,31 +47,30 @@ public class Pessoa {
         return id;
     }
 
-    public String getNome() {
-        return nome;
+    public String getBreed() {
+        return breed;
     }
 
-    public String getEmail() {
-        return email;
+    public String getSurname() {
+        return surname;
     }
 
-    public LocalDate getNascimento() {
-        return nascimento;
+    public String getGender() {
+        return gender;
     }
 
     //Setters
     /* O id não terá um setter, afinal, seu valor será setado direto no banco e esse
      *  recurso também não pode ser alterado. */
-    public void setNome(String nome) {
-        this.nome = nome;
+    public void setBreed(String breed) {
+        this.breed = breed;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setSurname(String surname) {
+        this.surname = surname;
     }
 
-    public void setNascimento(LocalDate nascimento) {
-        this.nascimento = nascimento;
+    public void setGender(String gender) {
+        this.gender = gender;
     }
-
 }
