@@ -23,18 +23,19 @@ public class Dogs {
     private UUID id;
 
     // Decorator que valida se o atributo está vazio.
-    @NotBlank
+    @NotBlank(message = "O campo 'Raça' (breed) não deve ser/estar vazio.")
     @Column(name = "breed")
     private String breed;
 
     // Decorator que define qual o mínimo e máximo de caracteres a ser armazenados no atributo nome
-    @Size(min = 3, max = 100)
-    @NotBlank // O valor não pode ser nulo
+    @Size(min = 3, max = 100, message = "O nome do cachorro deve ter entre 3 a 100 caracteres.")
+    @NotBlank(message = "O campo 'Apelido' (surname) não deve ser/estar vazio.") // O valor não pode ser nulo
     @Column(name = "surname")
     private String surname;
 
-    @Pattern(regexp = "^[MF]$", message = "Os valores aceitos são apenas 'M' para macho e 'F' para fêmea.") // Só permite a entrada de de dois valores (M e F).
-    @Size(min = 1, max = 1)
+    @NotBlank(message = "O campo 'Gênero' não deve ser vazio.")
+    @Pattern(regexp = "^[MF]$", message = "Os valores aceitos no campo 'Gênero' (gender) são apenas 'M' para macho e 'F' para fêmea.") // Só permite a entrada de de dois valores (M e F).
+    @Size(min = 1, max = 1, message = "Os valores no campo 'Gênero' (gender) deve ter apenas 1 caractere.")
     @Column(name = "gender")
     private String gender;
 

@@ -11,6 +11,7 @@ import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,16 +29,39 @@ public class DogsResource {
 
     @POST
     @Transactional
-    public Dogs criarDogs(@Valid Dogs dog) { // Se o registro tiver um dado incorreto, devido ao Decorator @Valid, o erro retornado será mais detalhado.
+    public Response criarDogs(@Valid Dogs dog) { // Se o registro tiver um dado incorreto, devido ao Decorator @Valid, o erro retornado será mais detalhado.
+        long startTime = System.currentTimeMillis();
         dogsRepository.persist(dog);
-        return dog;
+
+        // Um HashMap é um tipo de array que permite que eu atribua chaves a cada valor armazenado, ao invés de selecioná-los por índices.
+        /* Note que estou dizendo o seguinte:
+        *  final - A variável será uma constante;
+        *  HashMap<String, String> - Tanto a chave quanto o valor armazenado nela devem ser do tipo String
+        *  RES - nome da variávle (em maiúscula, visto ser uma constante)
+        *  new HashMap<String, String>() - Estou chamando a construtora do HashMap, para criar um novo HashMap que estou armazenando aqui, além de esclarecer que tanto as chaves quanto os valores serão em strings.*/
+        final HashMap<String, String> NEW_DOG_DATA = new HashMap<String, String>();
+        NEW_DOG_DATA.put("raca", dog.getBreed());
+        NEW_DOG_DATA.put("apelido", dog.getSurname());
+        NEW_DOG_DATA.put("genero", dog.getGender());
+
+        long endTime = System.currentTimeMillis();
+        long totalTime = endTime - startTime;
+
+        final HashMap<String, Object> RES = new HashMap<String, Object>();
+
+        RES.put("codigo", "200");
+        RES.put("status", "sucesso");
+        RES.put("tempo_execucao_ms", totalTime);
+        RES.put("mensagem", "Registro cadastrado com sucesso.");
+        RES.put("dados", NEW_DOG_DATA);
+        return Response.status(Response.Status.ACCEPTED).entity(RES).build();
     }
 
-    @GET
-    @Path("/{id}") // Não deve-se colocar ; nos decorators
-    public Dogs buscarDogsPorId(@PathParam("id") UUID id) {
-        return dogsRepository.findById(id);
-    }
+//    @GET
+//    @Path("/{id}") // Não deve-se colocar ; nos decorators
+//    public Dogs buscarDogsPorId(@PathParam("id") UUID id) {
+//        return dogsRepository.findById(id);
+//    }
 
     // Buscando cachorro por apelido
     @GET
@@ -49,25 +73,89 @@ public class DogsResource {
     @DELETE
     @Path("/{id}")
     @Transactional
-    public void deletarDogs(@PathParam("id") UUID id){
-        dogsRepository.deleteById(id);
+    public Response deletarDogs(@PathParam("id") UUID id){
+        HashMap<String, Object> RES = new HashMap<String, Object>();
+        long totalTime;
+        long endTime;
+        long startTime = System.currentTimeMillis();
+
+        boolean isDeleted = dogsRepository.deleteById(id);
+
+        if(isDeleted){
+            endTime = System.currentTimeMillis();
+            totalTime = endTime - startTime;
+
+            RES.put("codigo", "200");
+            RES.put("status", "sucesso");
+            RES.put("mensagem", "Registro removido.");
+            RES.put("id_removido", id);
+            RES.put("tempo_execucao_ms", totalTime);
+
+            return Response.status(Response.Status.OK).entity(RES).build();
+        }
+
+        endTime = System.currentTimeMillis();
+        totalTime = endTime - startTime;
+
+        RES.put("codigo", "404");
+        RES.put("status", "não encontrado");
+        RES.put("mensagem", "Não foi possível excluir esse registro, porque ele não existe no banco de dados.");
+        RES.put("id_enviado", id);
+        RES.put("tempo_execucao_ms", totalTime);
+
+        return Response.status(Response.Status.NOT_FOUND).entity(RES).build();
     }
 
     @PUT
     @Path("/{id}")
     @Transactional
-    public Dogs atualizarDogs(@PathParam("id") UUID id, Dogs dogs) {
+    public Response atualizarDogs(@PathParam("id") UUID id, Dogs dogs) {
+        long endTime;
+        long totalTime;
+        final HashMap<String, Object> RES = new HashMap<String, Object>();
+        final HashMap<String, String> NEW_VALUES = new HashMap<String, String>();
+
+        NEW_VALUES.put("raca", dogs.getBreed());
+        NEW_VALUES.put("apelido", dogs.getSurname());
+        NEW_VALUES.put("genero", dogs.getGender());
+
+        long startTime = System.currentTimeMillis();
+
         Dogs dogsExistente = dogsRepository.findById(id);
 
         if (dogsExistente != null) {
+            final HashMap<String, String> OLD_VALUES = new HashMap<String, String>();
+            OLD_VALUES.put("raca", dogsExistente.getBreed());
+            OLD_VALUES.put("apelido", dogsExistente.getSurname());
+            OLD_VALUES.put("genero", dogsExistente.getGender());
+
             dogsExistente.setBreed(dogs.getBreed());
             dogsExistente.setSurname(dogs.getSurname());
             dogsExistente.setGender(dogs.getGender());
-            // dogsRepository.persist(dogsExistente);
-            return dogsExistente;
+
+            endTime = System.currentTimeMillis();
+            totalTime = endTime - startTime;
+
+            RES.put("codigo", "200");
+            RES.put("status", "sucesso");
+            RES.put("mensagem", "O registro foi atualizado com êxito no banco de dados.");
+            RES.put("tempo_execucao_ms", totalTime);
+            RES.put("antigo_registro", OLD_VALUES);
+            RES.put("novo_registro", NEW_VALUES);
+
+            return Response.status(Response.Status.OK).entity(RES).build();
         }
 
-        return null;
+        endTime = System.currentTimeMillis();
+        totalTime = endTime - startTime;
+
+        RES.put("codigo", "404");
+        RES.put("status", "Não encontrado");
+        RES.put("mensagem", "Não foi possível atualizar o registro porque ele não existe no banco de dados.");
+        RES.put("tempo_execucao_ms", totalTime);
+        RES.put("registro_enviado", NEW_VALUES);
+
+        return Response.status(Response.Status.NOT_FOUND).entity(RES).build();
     }
 
     // Não é recomendável trazer todos os registros. Já imaginou que o banco tenha milhares de registros
