@@ -1,6 +1,6 @@
 package com.renato.dominio.repositorio;
 
-import com.renato.dominio.entidade.Dogs;
+import com.renato.dominio.entity.Dogs;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.inject.Singleton;
 
