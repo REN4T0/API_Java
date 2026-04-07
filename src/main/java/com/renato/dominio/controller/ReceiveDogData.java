@@ -15,30 +15,42 @@ import java.util.UUID;
 
 
 @Path("/dogs")
-public class ReceiveDogData {
+public class ReceiveDogData{
 
     @Inject
     DogsApp dogsService;
 
     @POST
     public Response receiveToPost(@Valid DogsDTO DogDtoObj) {
-        return dogsService.createDogs(DogDtoObj);
+        Status RESPONSE;
+
+        try {
+            RESPONSE = new Status("200", "success", "O registro foi cadastrado com sucesso.");
+            RESPONSE.more_info = dogsService.createDogs(DogDtoObj);
+            return Response.ok(RESPONSE).build();
+
+        } catch (Exception err) {
+            RESPONSE = new Status("500", "server_error", "Houve um problema na comunicação com o banco de dados no momento de cadastrar o registro.");
+            RESPONSE.more_info = err;
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(RESPONSE).build();
+        }
     }
 
     @PUT
     @Path("/{id}")
     public Response receiveToUpdate(@PathParam("id") UUID id, @Valid DogsDTO DogDtoObj) {
         // Validando a existência do cachorro no banco de dados para, posteriormente, poder atualizar.
+        Status RESPONSE;
         final Dogs dogExist = dogsService.searchDogsPerId(id);
+
         if(dogExist != null){
-            return dogsService.updateDogs(id, DogDtoObj, dogExist);
+            RESPONSE = new Status("200", "success", "O registro foi atualizado com êxito.");
+            RESPONSE.more_info = dogsService.updateDogs(id, DogDtoObj, dogExist);
+
+            return Response.ok(RESPONSE).build();
         }
 
-        final HashMap<String, String> RESPONSE = new HashMap<String, String>();
-        RESPONSE.put("code", "404");
-        RESPONSE.put("status", "success");
-        RESPONSE.put("msg", "Não foi possível atualizar o registro, porque ele não existe no banco");
-
+        RESPONSE = new Status("404", "not_found", "Não foi possível atualizar o registro, porque ele não existe no banco.");
         return Response.status(Response.Status.NOT_FOUND).entity(RESPONSE).build();
     }
 
@@ -46,5 +58,26 @@ public class ReceiveDogData {
     public Response receiveToGetAll(){
        final List<Dogs> RESPONSE = dogsService.getAllDogs();
        return Response.ok(RESPONSE).build();
+    }
+
+    @GET
+    @Path("/apelido/{surname}")
+    public Response receiveToSearchSurname(@PathParam("surname") String surname){
+        final List<Dogs> RESPONSE = dogsService.searchDogsPerSurname(surname);
+        return Response.ok(RESPONSE).build();
+    }
+
+    @DELETE
+    @Path("/{id}")
+    public Response receiveToDelete(@PathParam("id") UUID id){
+        Status RESPONSE;
+
+        if(dogsService.deleteDogs(id)){
+            RESPONSE = new Status("200", "success", "O registro foi deletado com sucesso.");
+            return Response.ok(RESPONSE).build();
+        }
+
+        RESPONSE = new Status("404", "not_found", "O registro não foi deletado, porque ele não existe no banco de dados.");
+        return Response.status(Response.Status.NOT_FOUND).entity(RESPONSE).build();
     }
 }

@@ -37,6 +37,4 @@ public class DogsDTO {
     public void setGender(String gender){
         this.gender = gender;
     }
-
-
 }
