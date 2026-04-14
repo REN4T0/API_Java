@@ -4,9 +4,11 @@ import com.renato.dominio.application.DogsApp;
 
 import com.renato.dominio.dto.DogsDTO;
 import com.renato.dominio.entity.Dogs;
+import io.micrometer.observation.annotation.ObservationKeyValue;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.util.HashMap;
@@ -41,30 +43,47 @@ public class ReceiveDogData{
     public Response receiveToUpdate(@PathParam("id") UUID id, @Valid DogsDTO DogDtoObj) {
         // Validando a existência do cachorro no banco de dados para, posteriormente, poder atualizar.
         Status RESPONSE;
-        final Dogs dogExist = dogsService.searchDogsPerId(id);
 
-        if(dogExist != null){
-            RESPONSE = new Status("200", "success", "O registro foi atualizado com êxito.");
-            RESPONSE.more_info = dogsService.updateDogs(id, DogDtoObj, dogExist);
+        try {
+            HashMap <String, Object> result = dogsService.updateDogs(id, DogDtoObj);
 
-            return Response.ok(RESPONSE).build();
+            if(result != null){
+                RESPONSE = new Status("200", "success", "O registro foi atualizado com êxito.");
+                RESPONSE.more_info = result;
+                return Response.ok(RESPONSE).build();
+            }
+
+            RESPONSE = new Status("404", "not_found", "Não foi possível atualizar o registro, porque ele não existe no banco.");
+            return Response.status(Response.Status.NOT_FOUND).entity(RESPONSE).build();
+
+        } catch (Exception err) {
+            RESPONSE = new Status("500", "server_error", "Houve um problema na comunicação com o banco de dados no momento de atualizar o registro.");
+            RESPONSE.more_info = err;
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(RESPONSE).build();
         }
-
-        RESPONSE = new Status("404", "not_found", "Não foi possível atualizar o registro, porque ele não existe no banco.");
-        return Response.status(Response.Status.NOT_FOUND).entity(RESPONSE).build();
     }
 
     @GET
     public Response receiveToGetAll(){
-       final List<Dogs> RESPONSE = dogsService.getAllDogs();
-       return Response.ok(RESPONSE).build();
+        try {
+            final List<Dogs> RESPONSE = dogsService.getAllDogs();
+            return Response.ok(RESPONSE).build();
+
+        } catch (Exception err) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new Status("500", "server_error", "Houve um problema na comunicação com o banco de dados no momento de buscar os registros.").more_info = err).build();
+        }
     }
 
     @GET
     @Path("/apelido/{surname}")
     public Response receiveToSearchSurname(@PathParam("surname") String surname){
-        final List<Dogs> RESPONSE = dogsService.searchDogsPerSurname(surname);
-        return Response.ok(RESPONSE).build();
+        try {
+            final List<Dogs> RESPONSE = dogsService.searchDogsPerSurname(surname);
+            return Response.ok(RESPONSE).build();
+
+        } catch (Exception err) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new Status("500", "server_error", "Houve um problema na comunicação com o banco de dados no momento de buscar o registro com base no campo \"apelido\" (surname).").more_info = err).build();
+        }
     }
 
     @DELETE
@@ -72,12 +91,19 @@ public class ReceiveDogData{
     public Response receiveToDelete(@PathParam("id") UUID id){
         Status RESPONSE;
 
-        if(dogsService.deleteDogs(id)){
-            RESPONSE = new Status("200", "success", "O registro foi deletado com sucesso.");
-            return Response.ok(RESPONSE).build();
-        }
+        try {
+            if(dogsService.deleteDogs(id)){
+                RESPONSE = new Status("200", "success", "O registro foi deletado com sucesso.");
+                return Response.ok(RESPONSE).build();
+            }
 
-        RESPONSE = new Status("404", "not_found", "O registro não foi deletado, porque ele não existe no banco de dados.");
-        return Response.status(Response.Status.NOT_FOUND).entity(RESPONSE).build();
+            RESPONSE = new Status("404", "not_found", "O registro não foi deletado, porque ele não existe no banco de dados.");
+            return Response.status(Response.Status.NOT_FOUND).entity(RESPONSE).build();
+
+        } catch (Exception err){
+            RESPONSE = new Status("500", "server_error", "Houve um problema na comunicação com o banco de dados no momento de deletar o registro.");
+            RESPONSE.more_info = err;
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(RESPONSE).build();
+        }
     }
 }

@@ -32,7 +32,11 @@ public class DogsApp {
 
     @Transactional
     public HashMap<String, Object> createDogs(DogsDTO dogDtoObj) { // Se o registro tiver um dado incorreto, devido ao Decorator @Valid, o erro retornado será mais detalhado.
-//        Status RES;
+        // Um HashMap é um tipo de array que permite que eu atribua chaves a cada valor armazenado, ao invés de selecioná-los por índices.
+        /* Note que estou dizendo o seguinte:
+         * HashMap<String, String> - Tanto a chave quanto o valor armazenado nela devem ser do tipo String
+         * RES - nome da variável (em maiúscula, visto ser uma constante)
+         * new HashMap<String, String>() - Estou chamando a construtora do HashMap, para criar um novo HashMap que estou armazenando aqui, além de esclarecer que tanto as chaves quanto os valores serão em strings.*/
         HashMap<String, Object> RESPONSE = new HashMap<String, Object>();
         long startTime = System.currentTimeMillis();
 
@@ -40,15 +44,7 @@ public class DogsApp {
         newDog.setBreed(dogDtoObj.getBreed());
         newDog.setSurname(dogDtoObj.getSurname());
         newDog.setGender(dogDtoObj.getGender());
-
         dogsRepository.persist(newDog);
-
-        // Um HashMap é um tipo de array que permite que eu atribua chaves a cada valor armazenado, ao invés de selecioná-los por índices.
-        /* Note que estou dizendo o seguinte:
-         * final - A variável será uma constante;
-         * HashMap<String, String> - Tanto a chave quanto o valor armazenado nela devem ser do tipo String
-         * RES - nome da variável (em maiúscula, visto ser uma constante)
-         * new HashMap<String, String>() - Estou chamando a construtora do HashMap, para criar um novo HashMap que estou armazenando aqui, além de esclarecer que tanto as chaves quanto os valores serão em strings.*/
 
         long endTime = System.currentTimeMillis();
         long totalTime = endTime - startTime;
@@ -57,11 +53,6 @@ public class DogsApp {
         RESPONSE.put("total_time", totalTime);
 
         return RESPONSE;
-
-//        RES = new Status("200", "success", "Registro cadastrado com sucesso");
-        // , totalTime, newDog
-
-//        return Response.status(Response.Status.ACCEPTED).entity(RES).build();
     }
 
     public Dogs searchDogsPerId(UUID id) {
@@ -79,15 +70,22 @@ public class DogsApp {
     }
 
     @Transactional
-    public HashMap<String, Object> updateDogs(UUID id, DogsDTO dogDtoObj, Dogs dogsExisting) {
+    public HashMap<String, Object> updateDogs(UUID id, DogsDTO dogDtoObj) {
         HashMap <String, Object> RESPONSE = new HashMap<String, Object>();
         long endTime;
         long totalTime;
+
+        Dogs dogExist = dogsRepository.findById(id);
+
+        if(dogExist == null){
+            return null;
+        }
+
         long startTime = System.currentTimeMillis();
 
-        dogsExisting.setBreed(dogDtoObj.getBreed());
-        dogsExisting.setSurname(dogDtoObj.getSurname());
-        dogsExisting.setGender(dogDtoObj.getGender());
+        dogExist.setBreed(dogDtoObj.getBreed());
+        dogExist.setSurname(dogDtoObj.getSurname());
+        dogExist.setGender(dogDtoObj.getGender());
 
         endTime = System.currentTimeMillis();
         totalTime = endTime - startTime;
@@ -104,13 +102,13 @@ public class DogsApp {
 
     /* Para não puxar os zilhões de registros do banco de dados, sem travar o servidor,
      * podemos puxar os dados por páginas, definindo quantos registros haverá em cada página,
-     * conforme o trecho abaixo. */
-//    @GET
-//    public List<Dogs> listarDogs(
-//            @QueryParam("page") @DefaultValue("0") int page, // O número da página pode ser enviada pela URL (query). Caso não venha nada, haverá um valor padrão setado (no caso 0; página 0).
-//            @QueryParam("size") @DefaultValue("10") int size) { // Da mesma forma, a quantidade de cada página pode ser enviada pela URL. Caso não seja, tem um valor padrão setado.
-//        return dogsRepository.findAll().page(page, size).list(); // Retornandos os dados com base nos parâmetros do método.
-//    }
+     * conforme o trecho abaixo.
+    @GET
+    public List<Dogs> listarDogs(
+            @QueryParam("page") @DefaultValue("0") int page, // O número da página pode ser enviada pela URL (query). Caso não venha nada, haverá um valor padrão setado (no caso 0; página 0).
+            @QueryParam("size") @DefaultValue("10") int size) { // Da mesma forma, a quantidade de cada página pode ser enviada pela URL. Caso não seja, tem um valor padrão setado.
+       return dogsRepository.findAll().page(page, size).list(); // Retornandos os dados com base nos parâmetros do método.
+    } */
 
     @GET
     @Path("/telemetria")
@@ -138,6 +136,7 @@ public class DogsApp {
         if (requisicoesHttp != null) {
             metricas.put("total_requisicoes_recebidas", requisicoesHttp.count());
             metricas.put("tempo_total_processamento_ms", requisicoesHttp.totalTime(TimeUnit.MILLISECONDS));
+
         } else {
             // Se ninguém acessou a API ainda, essa métrica não existe. Tratamos isso para não dar erro.
             metricas.put("aviso_trafego", "Faça pelo menos uma requisição (GET ou POST) para gerar dados de tráfego.");
