@@ -1,5 +1,6 @@
 package com.renato.dominio.application;
 
+import com.renato.dominio.client.DogBreedsAPI;
 import com.renato.dominio.dto.DogsDTO;
 import com.renato.dominio.entity.Dogs;
 import com.renato.dominio.repositorio.DogsRepository;
@@ -15,6 +16,7 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +31,13 @@ public class DogsApp {
 
     @Inject
     private DogsRepository dogsRepository;
+
+    @RestClient
+    DogBreedsAPI DogBreedsAPI;
+
+    public Map <String, Object> getExistingBreeds() {
+        return DogBreedsAPI.searchExistingBreeds();
+    }
 
     @Transactional
     public HashMap<String, Object> createDogs(DogsDTO dogDtoObj) { // Se o registro tiver um dado incorreto, devido ao Decorator @Valid, o erro retornado será mais detalhado.

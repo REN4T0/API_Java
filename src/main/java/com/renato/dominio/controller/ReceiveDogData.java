@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-
 @Path("/dogs")
 public class ReceiveDogData{
 
@@ -24,6 +23,10 @@ public class ReceiveDogData{
 
     @POST
     public Response receiveToPost(@Valid DogsDTO DogDtoObj) {
+        System.out.println(DogDtoObj.getBreed().getClass().getName());
+        System.out.println(DogDtoObj.getSurname().getClass().getName());
+        System.out.println(DogDtoObj.getGender().getClass().getName());
+
         Status RESPONSE;
 
         try {
