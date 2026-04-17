@@ -2,8 +2,10 @@ package com.renato.dominio.controller;
 
 import com.renato.dominio.application.DogsApp;
 
+import com.renato.dominio.client.DogBreedsAPI;
 import com.renato.dominio.dto.DogsDTO;
 import com.renato.dominio.entity.Dogs;
+import com.renato.dominio.validator.DogBreedValidator;
 import io.micrometer.observation.annotation.ObservationKeyValue;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -11,9 +13,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Path("/dogs")
 public class ReceiveDogData{
@@ -23,13 +23,11 @@ public class ReceiveDogData{
 
     @POST
     public Response receiveToPost(@Valid DogsDTO DogDtoObj) {
-        System.out.println(DogDtoObj.getBreed().getClass().getName());
-        System.out.println(DogDtoObj.getSurname().getClass().getName());
-        System.out.println(DogDtoObj.getGender().getClass().getName());
-
         Status RESPONSE;
 
+
         try {
+            DogBreedValidator(DogDtoObj.getBreed());
             RESPONSE = new Status("200", "success", "O registro foi cadastrado com sucesso.");
             RESPONSE.more_info = dogsService.createDogs(DogDtoObj);
             return Response.ok(RESPONSE).build();

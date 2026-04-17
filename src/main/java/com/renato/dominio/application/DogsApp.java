@@ -32,12 +32,6 @@ public class DogsApp {
     @Inject
     private DogsRepository dogsRepository;
 
-    @RestClient
-    DogBreedsAPI DogBreedsAPI;
-
-    public Map <String, Object> getExistingBreeds() {
-        return DogBreedsAPI.searchExistingBreeds();
-    }
 
     @Transactional
     public HashMap<String, Object> createDogs(DogsDTO dogDtoObj) { // Se o registro tiver um dado incorreto, devido ao Decorator @Valid, o erro retornado será mais detalhado.
