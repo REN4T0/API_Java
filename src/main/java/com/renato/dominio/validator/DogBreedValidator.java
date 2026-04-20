@@ -13,13 +13,7 @@ public class DogBreedValidator {
     @RestClient
     DogBreedsAPI DogBreedsAPI;
 
-
-
-//    public Map <String, Object> getExistingBreeds() {
-//        return DogBreedsAPI.searchExistingBreeds();
-//    }
-
-    public boolean validateBreed(String breed) {
+    public ArrayList<String> makeBreedArray() {
         ArrayList<String> breedList = new ArrayList<>();
 
         Map<String, List<String>> existingBreedsResponse = (Map<String, List<String>>) DogBreedsAPI.searchExistingBreeds().get("message");
@@ -34,7 +28,6 @@ public class DogBreedValidator {
             }
         }
 
-        boolean exists = breedList.contains(breed);
-        System.out.println(exists);
+        return breedList;
     }
 }

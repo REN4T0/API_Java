@@ -2,11 +2,9 @@ package com.renato.dominio.controller;
 
 import com.renato.dominio.application.DogsApp;
 
-import com.renato.dominio.client.DogBreedsAPI;
 import com.renato.dominio.dto.DogsDTO;
 import com.renato.dominio.entity.Dogs;
 import com.renato.dominio.validator.DogBreedValidator;
-import io.micrometer.observation.annotation.ObservationKeyValue;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
@@ -21,16 +19,22 @@ public class ReceiveDogData{
     @Inject
     DogsApp dogsService;
 
+    @Inject
+    DogBreedValidator validateBreed;
+
     @POST
     public Response receiveToPost(@Valid DogsDTO DogDtoObj) {
         Status RESPONSE;
 
-
         try {
-            DogBreedValidator(DogDtoObj.getBreed());
-            RESPONSE = new Status("200", "success", "O registro foi cadastrado com sucesso.");
-            RESPONSE.more_info = dogsService.createDogs(DogDtoObj);
-            return Response.ok(RESPONSE).build();
+            if (validateBreed.makeBreedArray().contains(DogDtoObj.getBreed())) {
+                RESPONSE = new Status("200", "success", "O registro foi cadastrado com sucesso.");
+                RESPONSE.more_info = dogsService.createDogs(DogDtoObj);
+                return Response.ok(RESPONSE).build();
+            }
+
+            RESPONSE = new Status("404", "not_found", "A raça (breed) enviada é inválida/inexistente.");
+            return Response.status(Response.Status.NOT_FOUND).entity(RESPONSE).build();
 
         } catch (Exception err) {
             RESPONSE = new Status("500", "server_error", "Houve um problema na comunicação com o banco de dados no momento de cadastrar o registro.");
@@ -49,9 +53,14 @@ public class ReceiveDogData{
             HashMap <String, Object> result = dogsService.updateDogs(id, DogDtoObj);
 
             if(result != null){
-                RESPONSE = new Status("200", "success", "O registro foi atualizado com êxito.");
-                RESPONSE.more_info = result;
-                return Response.ok(RESPONSE).build();
+                if(validateBreed.makeBreedArray().contains(DogDtoObj.getBreed())){
+                    RESPONSE = new Status("200", "success", "O registro foi atualizado com êxito.");
+                    RESPONSE.more_info = result;
+                    return Response.ok(RESPONSE).build();
+                }
+
+                RESPONSE = new Status("404", "not_found", "A raça (breed) enviada é inválida/inexistente.");
+                return Response.status(Response.Status.NOT_FOUND).entity(RESPONSE).build();
             }
 
             RESPONSE = new Status("404", "not_found", "Não foi possível atualizar o registro, porque ele não existe no banco.");
@@ -87,6 +96,21 @@ public class ReceiveDogData{
         }
     }
 
+    @GET
+    @Path("/breeds")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response listAvailableBreeds() {
+        try {
+            return Response.ok(validateBreed.makeBreedArray()).build();
+
+        } catch (Exception err) {
+            Status RESPONSE = new Status("500", "server_error", "Houve um problema na comunicação com a API externa no momento de buscar a lista de raças existentes/válidas.");
+            RESPONSE.more_info = err;
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(RESPONSE).build();
+
+        }
+    }
+
     @DELETE
     @Path("/{id}")
     public Response receiveToDelete(@PathParam("id") UUID id){
@@ -106,5 +130,4 @@ public class ReceiveDogData{
             RESPONSE.more_info = err;
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(RESPONSE).build();
         }
-    }
-}
+    }}
