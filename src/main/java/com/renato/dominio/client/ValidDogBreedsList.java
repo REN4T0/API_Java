@@ -1,15 +1,13 @@
-package com.renato.dominio.validator;
+package com.renato.dominio.client;
 
-import com.renato.dominio.client.DogBreedsAPI;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 @ApplicationScoped
-public class DogBreedValidator {
+public class ValidDogBreedsList {
     @RestClient
     DogBreedsAPI DogBreedsAPI;
 

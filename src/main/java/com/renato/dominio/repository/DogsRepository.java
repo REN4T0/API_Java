@@ -1,9 +1,8 @@
-package com.renato.dominio.repositorio;
+package com.renato.dominio.repository;
 
 import com.renato.dominio.entity.Dogs;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.inject.Singleton;
-
 import java.util.UUID;
 
 // Uma classe para o repositório de pessoas

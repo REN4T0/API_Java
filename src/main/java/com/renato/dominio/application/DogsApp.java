@@ -1,36 +1,29 @@
 package com.renato.dominio.application;
 
-import com.renato.dominio.client.DogBreedsAPI;
 import com.renato.dominio.dto.DogsDTO;
 import com.renato.dominio.entity.Dogs;
-import com.renato.dominio.repositorio.DogsRepository;
-import com.renato.dominio.controller.Status;
-
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
+import com.renato.dominio.repository.DogsRepository;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.ws.rs.Produces;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
-
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @ApplicationScoped
 public class DogsApp {
-    @Inject
-    MeterRegistry registry;
 
     @Inject
     private DogsRepository dogsRepository;
+
+    private long dogRegisterExist(DogsDTO dogRegister) {
+        return dogsRepository.count(
+                "breed = ?1 and surname = ?2 and gender = ?3",
+                dogRegister.getBreed(), dogRegister.getSurname(), dogRegister.getGender()
+        );
+    }
 
 
     @Transactional
@@ -40,6 +33,11 @@ public class DogsApp {
          * HashMap<String, String> - Tanto a chave quanto o valor armazenado nela devem ser do tipo String
          * RES - nome da variável (em maiúscula, visto ser uma constante)
          * new HashMap<String, String>() - Estou chamando a construtora do HashMap, para criar um novo HashMap que estou armazenando aqui, além de esclarecer que tanto as chaves quanto os valores serão em strings.*/
+
+        if(this.dogRegisterExist(dogDtoObj) > 0){
+            throw new IllegalArgumentException("O registro enviado já existe no banco de dados.");
+        }
+
         HashMap<String, Object> RESPONSE = new HashMap<String, Object>();
         long startTime = System.currentTimeMillis();
 
@@ -58,9 +56,9 @@ public class DogsApp {
         return RESPONSE;
     }
 
-    public Dogs searchDogsPerId(UUID id) {
-        return dogsRepository.findById(id);
-    }
+//    public Dogs searchDogsPerId(UUID id) {
+//        return dogsRepository.findById(id);
+//    }
 
     // Buscando cachorro por apelido
     public List<Dogs> searchDogsPerSurname(String surname){
@@ -81,8 +79,12 @@ public class DogsApp {
         Dogs dogExist = dogsRepository.findById(id);
 
         if(dogExist == null){
-            return null;
+            throw new NotFoundException("Não foi possível atualizar o registro, porque ele não existe no banco de dados.");
         }
+
+        if(this.dogRegisterExist(dogDtoObj)> 0){
+            throw new ClientErrorException("Nenhuma alteração foi feita no registro ou o registro já existe no banco de dados.", Response.Status.CONFLICT);
+        };
 
         long startTime = System.currentTimeMillis();
 
@@ -112,40 +114,4 @@ public class DogsApp {
             @QueryParam("size") @DefaultValue("10") int size) { // Da mesma forma, a quantidade de cada página pode ser enviada pela URL. Caso não seja, tem um valor padrão setado.
        return dogsRepository.findAll().page(page, size).list(); // Retornandos os dados com base nos parâmetros do método.
     } */
-
-    @GET
-    @Path("/telemetria")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Object> obterTelemetria() {
-        // 2. Criando o "pacote" que vai virar o nosso JSON
-        Map<String, Object> metricas = new HashMap<>();
-
-        // 3. Lendo a Memória RAM da Máquina Virtual Java
-        Gauge memoriaUsada = registry.find("jvm.memory.used").gauge();
-        if (memoriaUsada != null) {
-            // A memória vem em Bytes. Dividimos para converter para Megabytes.
-            double megabytes = memoriaUsada.value() / (1024 * 1024);
-            metricas.put("memoria_usada_mb", String.format("%.2f", megabytes));
-        }
-
-        // 4. Lendo o tempo em que a API está ligada (Uptime)
-        Gauge tempoAtivo = registry.find("process.uptime").gauge();
-        if (tempoAtivo != null) {
-            metricas.put("tempo_online_segundos", tempoAtivo.value());
-        }
-
-        // 5. Lendo o tráfego da API (Requisições HTTP)
-        Timer requisicoesHttp = registry.find("http.server.requests").timer();
-        if (requisicoesHttp != null) {
-            metricas.put("total_requisicoes_recebidas", requisicoesHttp.count());
-            metricas.put("tempo_total_processamento_ms", requisicoesHttp.totalTime(TimeUnit.MILLISECONDS));
-
-        } else {
-            // Se ninguém acessou a API ainda, essa métrica não existe. Tratamos isso para não dar erro.
-            metricas.put("aviso_trafego", "Faça pelo menos uma requisição (GET ou POST) para gerar dados de tráfego.");
-        }
-
-        // O Quarkus converte esse Map automaticamente para um formato JSON perfeito!
-        return metricas;
-    }
 }

@@ -1,10 +1,10 @@
 package com.renato.dominio.controller;
 
 import com.renato.dominio.application.DogsApp;
-
 import com.renato.dominio.dto.DogsDTO;
 import com.renato.dominio.entity.Dogs;
-import com.renato.dominio.validator.DogBreedValidator;
+import com.renato.dominio.client.ValidDogBreedsList;
+import com.renato.dominio.telemetry.BackendTelemetry;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
@@ -20,7 +20,11 @@ public class ReceiveDogData{
     DogsApp dogsService;
 
     @Inject
-    DogBreedValidator validateBreed;
+    ValidDogBreedsList validateBreed;
+
+    @Inject
+    BackendTelemetry telemetry;
+
 
     @POST
     public Response receiveToPost(@Valid DogsDTO DogDtoObj) {
@@ -52,18 +56,13 @@ public class ReceiveDogData{
         try {
             HashMap <String, Object> result = dogsService.updateDogs(id, DogDtoObj);
 
-            if(result != null){
-                if(validateBreed.makeBreedArray().contains(DogDtoObj.getBreed())){
-                    RESPONSE = new Status("200", "success", "O registro foi atualizado com êxito.");
-                    RESPONSE.more_info = result;
-                    return Response.ok(RESPONSE).build();
-                }
-
-                RESPONSE = new Status("404", "not_found", "A raça (breed) enviada é inválida/inexistente.");
-                return Response.status(Response.Status.NOT_FOUND).entity(RESPONSE).build();
+            if(validateBreed.makeBreedArray().contains(DogDtoObj.getBreed())){
+                RESPONSE = new Status("200", "success", "O registro foi atualizado com êxito.");
+                RESPONSE.more_info = result;
+                return Response.ok(RESPONSE).build();
             }
 
-            RESPONSE = new Status("404", "not_found", "Não foi possível atualizar o registro, porque ele não existe no banco.");
+            RESPONSE = new Status("404", "not_found", "A raça (breed) enviada é inválida/inexistente.");
             return Response.status(Response.Status.NOT_FOUND).entity(RESPONSE).build();
 
         } catch (Exception err) {
@@ -109,6 +108,13 @@ public class ReceiveDogData{
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(RESPONSE).build();
 
         }
+    }
+
+    @GET
+    @Path("/telemetry")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response receiveToGetAppTelemetry(){
+        return Response.ok(telemetry.getTelemetry()).build();
     }
 
     @DELETE

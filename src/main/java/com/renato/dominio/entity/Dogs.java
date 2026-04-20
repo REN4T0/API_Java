@@ -6,36 +6,29 @@ package com.renato.dominio.entity;
    otimizando a programação. Estou aproveitando algorítimos já existentes para aumentar
    minha eficiência. */
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 import java.util.UUID; // O que é UUID? **Pesquisar**
 
 // A entidade será a classe que eu criei agora
 @Entity
-@Table(name = "dogs")
+@Table(name = "dogs", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"breed", "surname", "gender"}) // Definindo que cada registro é único e não pode se repetir
+})
 public class Dogs {
     // Definindo os atributos da minha classe
     /* Meu primeiro atributo receberá um decorator chamado Id, que, em 'background'
-    'rodará' uma série de algorítimo que definião esse primeiro atributo como um Id,
+    'rodará' uma série de algorítimo que definirão esse primeiro atributo como um Id,
     principalmente quando for armazenado no banco de dados
      */
     @Id
     @GeneratedValue(strategy = GenerationType.UUID) // Gerando um valor aleatório para o Id
     private UUID id;
 
-    // Decorator que valida se o atributo está vazio.
-//    @NotBlank(message = "O campo 'Raça' (breed) não deve ser/estar vazio.")
     @Column(name = "breed")
     private String breed;
 
-    // Decorator que define qual o mínimo e máximo de caracteres a ser armazenados no atributo nome
-//    @Size(min = 3, max = 100, message = "O nome do cachorro deve ter entre 3 a 100 caracteres.")
-//    @NotBlank(message = "O campo 'Apelido' (surname) não deve ser/estar vazio.") // O valor não pode ser nulo
     @Column(name = "surname")
     private String surname;
 
-//    @NotBlank(message = "O campo 'Gênero' não deve ser vazio.")
-//    @Pattern(regexp = "^[MF]$", message = "Os valores aceitos no campo 'Gênero' (gender) são apenas 'M' para macho e 'F' para fêmea.") // Só permite a entrada de de dois valores (M e F).
-//    @Size(min = 1, max = 1, message = "Os valores no campo 'Gênero' (gender) deve ter apenas 1 caractere.")
     @Column(name = "gender")
     private String gender;
 
