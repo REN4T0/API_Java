@@ -1,4 +1,5 @@
 package com.renato.dominio.telemetry;
+// Para ter a telemtria completa, use este endereço: http://localhost:8070/q/metrics
 
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
