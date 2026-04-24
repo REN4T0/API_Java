@@ -2,6 +2,8 @@ package com.renato.dominio.application;
 
 import com.renato.dominio.dto.DogsDTO;
 import com.renato.dominio.entity.Dogs;
+import com.renato.dominio.exceptions.RecordAlreadyExistsException;
+import com.renato.dominio.exceptions.RecordNotFoundException;
 import com.renato.dominio.repository.DogsRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -24,10 +26,17 @@ public class DogsApp {
                 dogRegister.getBreed(), dogRegister.getSurname(), dogRegister.getGender()
         );
     }
+    private long dogRegisterExistForUpdate(DogsDTO dogRegister, UUID id) {
+        return dogsRepository.count(
+                "breed = ?1 and surname = ?2 and gender = ?3 and id != ?4",
+                dogRegister.getBreed(), dogRegister.getSurname(), dogRegister.getGender(), id
+        );
+    }
+
 
 
     @Transactional
-    public HashMap<String, Object> createDogs(DogsDTO dogDtoObj) { // Se o registro tiver um dado incorreto, devido ao Decorator @Valid, o erro retornado será mais detalhado.
+    public HashMap<String, Object> createDogs(DogsDTO dogDtoObj) throws RecordAlreadyExistsException { // Se o registro tiver um dado incorreto, devido ao Decorator @Valid, o erro retornado será mais detalhado.
         // Um HashMap é um tipo de array que permite que eu atribua chaves a cada valor armazenado, ao invés de selecioná-los por índices.
         /* Note que estou dizendo o seguinte:
          * HashMap<String, String> - Tanto a chave quanto o valor armazenado nela devem ser do tipo String
@@ -35,7 +44,7 @@ public class DogsApp {
          * new HashMap<String, String>() - Estou chamando a construtora do HashMap, para criar um novo HashMap que estou armazenando aqui, além de esclarecer que tanto as chaves quanto os valores serão em strings.*/
 
         if(this.dogRegisterExist(dogDtoObj) > 0){
-            throw new IllegalArgumentException("O registro enviado já existe no banco de dados.");
+            throw new RecordAlreadyExistsException(); //ordAlreadyExists IllegalArgumentException("409");
         }
 
         HashMap<String, Object> RESPONSE = new HashMap<String, Object>();
@@ -71,7 +80,7 @@ public class DogsApp {
     }
 
     @Transactional
-    public HashMap<String, Object> updateDogs(UUID id, DogsDTO dogDtoObj) {
+    public HashMap<String, Object> updateDogs(UUID id, DogsDTO dogDtoObj) throws RecordNotFoundException, RecordAlreadyExistsException {
         HashMap <String, Object> RESPONSE = new HashMap<String, Object>();
         long endTime;
         long totalTime;
@@ -79,11 +88,12 @@ public class DogsApp {
         Dogs dogExist = dogsRepository.findById(id);
 
         if(dogExist == null){
-            throw new NotFoundException("Não foi possível atualizar o registro, porque ele não existe no banco de dados.");
+            throw new RecordNotFoundException();
+//            throw new NotFoundException("Não foi possível atualizar o registro, porque ele não existe no banco de dados.");
         }
 
-        if(this.dogRegisterExist(dogDtoObj)> 0){
-            throw new ClientErrorException("Nenhuma alteração foi feita no registro ou o registro já existe no banco de dados.", Response.Status.CONFLICT);
+        if(this.dogRegisterExistForUpdate(dogDtoObj, id)> 0){
+            throw new RecordAlreadyExistsException();
         };
 
         long startTime = System.currentTimeMillis();
