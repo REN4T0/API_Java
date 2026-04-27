@@ -26,14 +26,13 @@ public class DogsApp {
                 dogRegister.getBreed(), dogRegister.getSurname(), dogRegister.getGender()
         );
     }
+
     private long dogRegisterExistForUpdate(DogsDTO dogRegister, UUID id) {
         return dogsRepository.count(
                 "breed = ?1 and surname = ?2 and gender = ?3 and id != ?4",
                 dogRegister.getBreed(), dogRegister.getSurname(), dogRegister.getGender(), id
         );
     }
-
-
 
     @Transactional
     public HashMap<String, Object> createDogs(DogsDTO dogDtoObj) throws RecordAlreadyExistsException { // Se o registro tiver um dado incorreto, devido ao Decorator @Valid, o erro retornado será mais detalhado.
@@ -89,10 +88,9 @@ public class DogsApp {
 
         if(dogExist == null){
             throw new RecordNotFoundException();
-//            throw new NotFoundException("Não foi possível atualizar o registro, porque ele não existe no banco de dados.");
         }
 
-        if(this.dogRegisterExistForUpdate(dogDtoObj, id)> 0){
+        if(this.dogRegisterExistForUpdate(dogDtoObj, id) > 0){
             throw new RecordAlreadyExistsException();
         };
 
