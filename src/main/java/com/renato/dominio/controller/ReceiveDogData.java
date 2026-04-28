@@ -19,9 +19,6 @@ import java.util.*;
 @Path("/dogs")
 public class ReceiveDogData {
 
-    // 1. Instancie o Logger
-    //private static final Logger LOG = Logger.getLogger(ReceiveDogData.class);
-
     @Inject
     DogsApp dogsService;
 
@@ -119,7 +116,7 @@ public class ReceiveDogData {
             return Response.ok(RESPONSE).build();
 
         } catch (Exception ex) {
-            Log.errorf("| OCORREU UM ERRO INESPERADO ENVOLVENDO A COMUNICAÇÃO COM O BANCO DE DADOS NO MOMENTO DE CONSULTAR OS REGSITROS CADASTRADOS.\nCÓDIGO: 500 - INTERNAL SERVER ERROR\n DETALHES - %s", ex);
+            Log.errorf("| OCORREU UM ERRO INESPERADO ENVOLVENDO A COMUNICAÇÃO COM O BANCO DE DADOS NO MOMENTO DE CONSULTAR OS REGISTROS CADASTRADOS.\nCÓDIGO: 500 - INTERNAL SERVER ERROR\n DETALHES - %s", ex);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new Status("500", "server_error", "Houve um problema na comunicação com o banco de dados no momento de buscar os registros.").more_info = ex).build();
         }
     }
