@@ -9,7 +9,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Response;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -42,7 +42,7 @@ public class DogsApp {
          * RES - nome da variável (em maiúscula, visto ser uma constante)
          * new HashMap<String, String>() - Estou chamando a construtora do HashMap, para criar um novo HashMap que estou armazenando aqui, além de esclarecer que tanto as chaves quanto os valores serão em strings.*/
 
-        if(this.dogRegisterExist(dogDtoObj) > 0){
+        if (this.dogRegisterExist(dogDtoObj) > 0) {
             throw new RecordAlreadyExistsException(); //ordAlreadyExists IllegalArgumentException("409");
         }
 
@@ -58,9 +58,7 @@ public class DogsApp {
         long endTime = System.currentTimeMillis();
         long totalTime = endTime - startTime;
 
-        RESPONSE.put("sended_data", newDog);
         RESPONSE.put("total_time", totalTime);
-
         return RESPONSE;
     }
 
@@ -69,30 +67,30 @@ public class DogsApp {
 //    }
 
     // Buscando cachorro por apelido
-    public List<Dogs> searchDogsPerSurname(String surname){
+    public List<Dogs> searchDogsPerSurname(String surname) {
         return dogsRepository.find("surname like ?1", "%" + surname + "%").list(); // Vai retornar todos os cachorros que tenham nomes inicialmente semelhantes, não sendo necessário escrever o nome completo do cachorro.
     }
 
     @Transactional
-    public Boolean deleteDogs(UUID id){
+    public Boolean deleteDogs(UUID id) {
         return dogsRepository.deleteById(id);
     }
 
     @Transactional
     public HashMap<String, Object> updateDogs(UUID id, DogsDTO dogDtoObj) throws RecordNotFoundException, RecordAlreadyExistsException {
-        HashMap <String, Object> RESPONSE = new HashMap<String, Object>();
+        HashMap<String, Object> RESPONSE = new HashMap<String, Object>();
         long endTime;
         long totalTime;
 
         Dogs dogExist = dogsRepository.findById(id);
 
-        if(dogExist == null){
+        if (dogExist == null) {
             throw new RecordNotFoundException();
         }
 
-        if(this.dogRegisterExistForUpdate(dogDtoObj, id) > 0){
+        if (this.dogRegisterExistForUpdate(dogDtoObj, id) > 0) {
             throw new RecordAlreadyExistsException();
-        };
+        }
 
         long startTime = System.currentTimeMillis();
 
@@ -109,8 +107,8 @@ public class DogsApp {
     }
 
     // Não é recomendável trazer todos os registros. Já imaginou que o banco tenha milhares de registros
-    public List<Dogs> getAllDogs(){
-       return dogsRepository.listAll();
+    public List<Dogs> getAllDogs() {
+        return dogsRepository.listAll();
     }
 
     /* Para não puxar os zilhões de registros do banco de dados, sem travar o servidor,

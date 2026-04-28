@@ -11,9 +11,11 @@ import com.renato.dominio.telemetry.BackendTelemetry;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import io.quarkus.logging.Log;
+import io.vertx.core.http.HttpServerRequest;
 import java.util.*;
 
 @Path("/dogs")
@@ -28,18 +30,25 @@ public class ReceiveDogData {
     @Inject
     BackendTelemetry telemetry;
 
+    @Context
+    HttpServerRequest request;
+
+    private String getClientIP() {
+        return request.remoteAddress().host();
+    }
 
     @POST
     public Response receiveToPost(@Valid DogsDTO DogDtoObj) {
-        Log.infof("| REQUISIÇÃO DE CADASTRO DE UM NOVO REGISTRO RECEBIDA. INICIANDO PROCEDIMENTO...\nDADOS RECEBIDOS -> Raça: %s, Apelido: %s, Sexo: %s", DogDtoObj.getBreed(), DogDtoObj.getSurname(), DogDtoObj.getGender());
+        Log.infof("| REQUISIÇÃO DE CADASTRO DE UM NOVO REGISTRO RECEBIDA. INICIANDO PROCEDIMENTO...\nDADOS RECEBIDOS -> Raça: %s, Apelido: %s, Sexo: %s\nIP QUE REQUISITOU A OPERAÇÃO: %s", DogDtoObj.getBreed(), DogDtoObj.getSurname(), DogDtoObj.getGender(), getClientIP());
         Status RESPONSE;
 
         try {
             if (validateBreed.makeBreedArray().contains(DogDtoObj.getBreed())) {
+                HashMap<String, Object> result = dogsService.createDogs(DogDtoObj);
                 RESPONSE = new Status("200", "success", "O registro foi cadastrado com sucesso.");
-                RESPONSE.more_info = dogsService.createDogs(DogDtoObj);
+                RESPONSE.more_info = result;
 
-                Log.info("| CADASTRO DE NOVO REGISTRO REALIZADO COM SUCESSO.");
+                Log.infof("| CADASTRO DE NOVO REGISTRO REALIZADO COM SUCESSO.\nDETALHES: %s", result);
                 return Response.ok(RESPONSE).build();
             }
 
@@ -50,10 +59,12 @@ public class ReceiveDogData {
             RESPONSE.more_info = exRecord;
             Log.warnf("| NÃO FOI POSSÍVEL CADASTRAR O REGISTRO RECEBIDO, PORQUE ELE JÁ EXISTE NO BANCO DE DADOS.\nCÓDIGO: 409 - CONFLICT\nDADOS QUE NÃO FOI POSSÍVEL CADASTRAR -> Raça: %s, Apelido: %s, Sexo: %s", DogDtoObj.getBreed(), DogDtoObj.getSurname(), DogDtoObj.getGender());
             return Response.status(Response.Status.CONFLICT).entity(RESPONSE).build();
+
         } catch (BreedNotFoundException exBreedNotFound) {
             RESPONSE = new Status("404", "not_found", "A raça (breed) enviada é inválida/inexistente.");
             Log.warnf("| NÃO FOI POSSÍVEL CADASTRAR O REGISTRO RECEBIDO, PORQUE A RAÇA ENVIADA É INVÁLIDA OU INEXISTENTE.\nCÓDIGO: 404 - NOT FOUND\nDADO COM CONTEÚDO INVÁLIDO/INEXISTENTE -> Raça: %s", DogDtoObj.getBreed());
             return Response.status(Response.Status.NOT_FOUND).entity(RESPONSE).build();
+
         } catch (Exception ex) {
             RESPONSE = new Status("500", "server_error", "Houve um problema na comunicação com o banco de dados no momento de cadastrar o registro.");
             RESPONSE.more_info = ex;
@@ -65,7 +76,7 @@ public class ReceiveDogData {
     @PUT
     @Path("/{id}")
     public Response receiveToUpdate(@PathParam("id") UUID id, @Valid DogsDTO DogDtoObj) {
-        Log.infof("| REQUISIÇÃO DE ATUALIZAÇÃO DE REGISTRO RECEBIDA PARA O ID: %s \nDADOS RECEBIDOS -> Raça: %s, Apelido: %s, Sexo: %s", id, DogDtoObj.getBreed(), DogDtoObj.getSurname(), DogDtoObj.getGender());
+        Log.infof("| REQUISIÇÃO DE ATUALIZAÇÃO DE REGISTRO RECEBIDA PARA O ID: %s \nDADOS RECEBIDOS -> Raça: %s, Apelido: %s, Sexo: %s\nIP QUE REQUISITOU A OPERAÇÃO: %s", id, DogDtoObj.getBreed(), DogDtoObj.getSurname(), DogDtoObj.getGender(), getClientIP());
         Status RESPONSE;
 
         try {
@@ -74,7 +85,7 @@ public class ReceiveDogData {
                 RESPONSE = new Status("200", "success", "O registro foi atualizado com êxito.");
                 RESPONSE.more_info = result;
 
-                Log.infof("| O REGISTRO DE ID %s FOI ATUALIZADO COM SUCESSO.", id);
+                Log.infof("| O REGISTRO DE ID %s FOI ATUALIZADO COM SUCESSO.\nDETALHES: %s", id, result);
                 return Response.ok(RESPONSE).build();
             }
 
@@ -108,7 +119,7 @@ public class ReceiveDogData {
 
     @GET
     public Response receiveToGetAll() {
-        Log.info("| REQUISIÇÃO DE CONSULTA DE REGISTROS CADASTRADOS NO BANCO DE DADOS RECEBIDA.");
+        Log.infof("| REQUISIÇÃO DE CONSULTA DE REGISTROS CADASTRADOS NO BANCO DE DADOS RECEBIDA.\nIP QUE REQUISITOU A OPERAÇÃO: %s", getClientIP());
 
         try {
             final List<Dogs> RESPONSE = dogsService.getAllDogs();
@@ -124,7 +135,7 @@ public class ReceiveDogData {
     @GET
     @Path("/apelido/{surname}")
     public Response receiveToSearchSurname(@PathParam("surname") String surname) {
-        Log.infof("| REQUISIÇÃO DE BUSCA POR REGISTROS QUE CONTENHAM '%s' NO APELIDO RECEBIDA.", surname);
+        Log.infof("| REQUISIÇÃO DE BUSCA POR REGISTROS QUE CONTENHAM '%s' NO APELIDO RECEBIDA.\nIP QUE REQUISITOU A OPERAÇÃO: %s", surname, getClientIP());
 
         try {
             final List<Dogs> RESPONSE = dogsService.searchDogsPerSurname(surname);
@@ -141,7 +152,7 @@ public class ReceiveDogData {
     @Path("/breeds")
     @Produces(MediaType.APPLICATION_JSON)
     public Response listAvailableBreeds() {
-        Log.info("| BUSCANDO RAÇAS EXISTENTES/VÁLIDAS ATRAVÉS DE UMA REQUISIÇÃO EFETUADA NA API 'DOG CEO'...");
+        Log.infof("| BUSCANDO RAÇAS EXISTENTES/VÁLIDAS ATRAVÉS DE UMA REQUISIÇÃO EFETUADA NA API 'DOG CEO'...\nIP QUE REQUISITOU A OPERAÇÃO: %s", getClientIP());
 
         try {
             final ArrayList<String> BREED_ARRAY_RESPONSE = validateBreed.makeBreedArray();
@@ -166,7 +177,7 @@ public class ReceiveDogData {
     @DELETE
     @Path("/{id}")
     public Response receiveToDelete(@PathParam("id") UUID id) {
-        Log.infof("| REQUISIÇÃO DE EXCLUSÃO RECEBIDA PARA O REGISTRO DE ID: %s | INICIANDO PROCEDIMENTO...", id);
+        Log.infof("| REQUISIÇÃO DE EXCLUSÃO RECEBIDA PARA O REGISTRO DE ID: %s | INICIANDO PROCEDIMENTO...\nIP QUE REQUISITOU A OPERAÇÃO: %s", id, getClientIP());
         Status RESPONSE;
 
         try {
